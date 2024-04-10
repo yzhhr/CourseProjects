@@ -12,4 +12,6 @@ In progress
 
 - [safety](safety/): The "Cyberspace Security" course.
   - [eke](safety/eke): Bellovin-Merritt Encrypted Key Exchange.
+- [numal](numal/): The "Numerical Analysis" course.
+  - The folder contains 4 jupyter notebooks, each for one problem required by the course
 
