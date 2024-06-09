@@ -1,5 +1,7 @@
 # Numerical Analysis in Spring 2024
 
+If you want no hassle, you can view the rendered notebooks directly on GitHub, at https://github.com/yzhhr/CourseProjects/tree/main/numal.
+
 The course requires 4 out of 7 problems from the [problems.pdf](problems.pdf) file. I completed the problems 1, 2, 3, 7 in the form of Jupyter notebooks.
 
 You can view the rendered notebooks directly on GitHub.
