@@ -1,3 +1,4 @@
+from typing import Optional
 import torch
 from torch.utils.data import Dataset, DataLoader
 from torch.nn import Module
@@ -22,9 +23,16 @@ class AddMark(Module):
 
     def forward(self, x):
         return x * (1 - self.mask) + self.pattern * self.mask
+        
+def mnist_mask_fn(size=2):
+    mask = torch.zeros(1, 28, 28)
+    mask[:, 27-size:27, 27-size:27] = 1
+    pattern = torch.ones(1, 28, 28)
+    mask_fn = AddMark(mask, pattern)
+    return mask_fn
 
 class MarkedDataset(Dataset):
-    def __init__(self, dataset, mark_fn: Module, damage_portion=0.01, target=0):
+    def __init__(self, dataset, mark_fn: Module, damage_portion=0.01, target: Optional[int] = None):
         self.dataset = dataset
         self.mark_fn = mark_fn
         self.damage_portion = damage_portion
@@ -34,7 +42,7 @@ class MarkedDataset(Dataset):
     def __getitem__(self, index):
         data, target = self.dataset[index]
         if self.marked[index]:
-            return data, self.target
+            return self.mark_fn(data), self.target if self.target is not None else target
         return data, target
 
     def __len__(self):
@@ -118,10 +126,7 @@ def train(cfg: DictConfig): # train with backdoor
     # train_dataset = torchvision.datasets.GTSRB(root=get_original_cwd() +  "/data", split="train", download=True, transform=transform_data)
     trainset = torchvision.datasets.MNIST(root=get_original_cwd() +  "/data", train=True, download=True, transform=transform_data)
     testset = torchvision.datasets.MNIST(root=get_original_cwd() +  "/data", train=False, download=True, transform=transform_data)
-    mask = torch.zeros(1, 28, 28)
-    mask[:, 25:27, 25:27] = 1
-    pattern = torch.ones(1, 28, 28) * 1
-    mask_fn = AddMark(mask, pattern)
+    mask_fn = mnist_mask_fn()
     trainset_poisoned = MarkedDataset(trainset, mask_fn, cfg.poison.portion, target=cfg.poison.target)
 
     # model = torchvision.models.resnet18(weights='IMAGENET1K_V1')
@@ -135,13 +140,13 @@ def train(cfg: DictConfig): # train with backdoor
     wandb.init(project="safety", entity="safety", config=cfg) # type: ignore
     # training
     model.to(device)
-    train_loop(cfg, model, trainset, testset, device)
+    train_loop(cfg, model, trainset_poisoned, testset, device)
     model.cpu()
     
     wandb.finish()
     # save model
     os.makedirs("models", exist_ok=True)
-    torch.save(model.state_dict(), "models/backdoor_{target}.pth")
+    torch.save(model.state_dict(), f"models/backdoor_{cfg.poison.target}.pth")
 
 if __name__ == "__main__":
     train()
