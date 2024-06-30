@@ -19,8 +19,8 @@ def add_mark(mask: torch.Tensor, pattern: torch.Tensor, x: torch.Tensor) -> torc
 class AddMark(Module):
     def __init__(self, mask: torch.Tensor, pattern: torch.Tensor):
         super().__init__()
-        self.mask = torch.nn.Parameter(mask)
-        self.pattern = torch.nn.Parameter(pattern)
+        self.mask = mask
+        self.pattern = pattern
 
     def forward(self, x):
         return add_mark(self.mask, self.pattern, x)
