@@ -3,8 +3,6 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 from torch.nn import Module
 import torchvision
-from transformers import ResNetConfig, ResNetModel
-import datasets
 import wandb
 import hydra
 from hydra.utils import get_original_cwd
@@ -15,14 +13,17 @@ from tqdm.auto import tqdm, trange
 from tqdm.contrib import tenumerate
 log = logging.getLogger(__name__)
 
+def add_mark(mask: torch.Tensor, pattern: torch.Tensor, x: torch.Tensor) -> torch.Tensor:
+    return x * (1 - mask) + pattern * mask
+
 class AddMark(Module):
-    def __init__(self, mask, pattern):
+    def __init__(self, mask: torch.Tensor, pattern: torch.Tensor):
         super().__init__()
-        self.mask = mask
-        self.pattern = pattern
+        self.mask = torch.nn.Parameter(mask)
+        self.pattern = torch.nn.Parameter(pattern)
 
     def forward(self, x):
-        return x * (1 - self.mask) + self.pattern * self.mask
+        return add_mark(self.mask, self.pattern, x)
         
 def mnist_mask_fn(size=2):
     mask = torch.zeros(1, 28, 28)
@@ -32,11 +33,12 @@ def mnist_mask_fn(size=2):
     return mask_fn
 
 class MarkedDataset(Dataset):
-    def __init__(self, dataset, mark_fn: Module, damage_portion=0.01, target: Optional[int] = None):
+    def __init__(self, dataset, mark_fn: Module, damage_portion=0.01, target: Optional[int] = None, seed=42):
         self.dataset = dataset
         self.mark_fn = mark_fn
         self.damage_portion = damage_portion
         self.target = target
+        torch.manual_seed(seed) # yes this is side effect but it's fine
         self.marked = torch.rand(len(dataset)) < damage_portion
 
     def __getitem__(self, index):

@@ -13,12 +13,25 @@ hydra:
 wandb:
   project: backdoor
 
+data:
+  image:
+    shape: [1, 28, 28]
+  num_classes: 10
+  
+
 device: "cuda:0"
 poison:
   target: 8
   portion: 0.02
+  model_path: "outputs/2024-06-29/16-37-23/models/backdoor_8.pth"
 
 train:
   num_epochs: 20
   batch_size: 256
+  lr: 0.001
+
+detect:
+  num_epochs: 20
+  batch_size: 256
+  coef_reg: 0.01
   lr: 0.001
